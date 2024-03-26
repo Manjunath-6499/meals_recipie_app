@@ -5,7 +5,8 @@ import "package:meals_app/screens/category_screen.dart";
 import "package:meals_app/screens/filters.dart";
 import "package:meals_app/screens/meals_screen.dart";
 import "package:meals_app/widgets/main_drawer.dart";
-
+import 'package:meals_app/provider/meals_provider.dart';
+import "package:meals_app/provider/favorites_provider.dart";
 
 const KInitialFilters = {
   Filter.glutenFree: false,
@@ -23,36 +24,8 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   int _selectedPageindex = 0;
-  final List<Meal> _favoriteMeals = [];
+
   Map<Filter, bool> _selectedFilters = KInitialFilters;
-
-  void _showInfoMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.black,
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-          ),
-        )));
-  }
-
-  void _toggleMealFavoriteStatus(Meal meal) {
-    final isExisting = _favoriteMeals.contains(meal);
-
-    if (isExisting) {
-      setState(() {
-        _favoriteMeals.remove(meal);
-      });
-      _showInfoMessage("Meal is no longer a favorite.");
-    } else {
-      setState(() {
-        _favoriteMeals.add(meal);
-        _showInfoMessage("Marked as a favourite!.");
-      });
-    }
-  }
 
   void _selectPage(int index) {
     setState(() {
@@ -78,7 +51,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final availableMeals = dummyMeals.where((meal) {
+    final meals = ref.watch(mealsProvider);
+
+    final availableMeals = meals.where((meal) {
       if (_selectedFilters[Filter.glutenFree]! && !meal.isGlutenFree) {
         return false;
       }
@@ -94,16 +69,15 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       return true;
     }).toList();
     Widget activePage = CategoryScreen(
-      onToggleFavorite: _toggleMealFavoriteStatus,
       availableMeals: availableMeals,
     );
     var activePageTitle = "Categories";
 
     if (_selectedPageindex == 1) {
+      final favoriteMeals = ref.watch(favoriteMealsProvider);
       activePage = MealsScreen(
         title: null,
-        meals: _favoriteMeals,
-        onToggleFavorite: _toggleMealFavoriteStatus,
+        meals: favoriteMeals,
       );
       activePageTitle = " Your Favorites";
     }
